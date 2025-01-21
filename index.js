@@ -230,8 +230,7 @@ app.get('/api/get-leaderboard', async (req, res) => {
 			},
 			take: 100,
 			select: {
-				firstName: true,
-				lastName: true,
+				username: true,
 				balance: true
 			}
 		});
@@ -239,7 +238,7 @@ app.get('/api/get-leaderboard', async (req, res) => {
 		// Формируем результат с нумерацией
 		const leaderboard = leaderboardUsers.map((user, index) => ({
 			id: String(index + 1).padStart(3, '0'), // Форматируем ID в виде 001, 002, ...
-			name: `${user.firstName} ${user.lastName || ''}`.trim(), // Полное имя
+			name: username, // Полное имя
 			balance: user.balance
 		}));
 
