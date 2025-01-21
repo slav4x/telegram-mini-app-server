@@ -90,6 +90,8 @@ app.post('/api/save-user', async (req, res) => {
 
 		console.log('Parsed data:', data);
 
+		const user = JSON.parse(data.user);
+
 		// Валидация данных пользователя
 		const validatedUser = userSchema.parse({
 			id: String(user.id),
@@ -99,6 +101,8 @@ app.post('/api/save-user', async (req, res) => {
 			language_code: data.user ? JSON.parse(data.user).language_code : undefined,
 			is_premium: data.user ? JSON.parse(data.user).is_premium : false
 		});
+
+		console.log('Validated user:', validatedUser);
 
 		// Проверяем, существует ли пользователь
 		const existingUser = await prisma.users.findUnique({
