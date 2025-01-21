@@ -145,15 +145,15 @@ app.post('/api/save-user', async (req, res) => {
 });
 
 // Валидация данных для обновления баланса через Zod
-const updateBalanceSchema = z.object({
-	telegramId: z.string(),
-	amount: z.number().int() // Указываем, что значение должно быть целым числом
+const schema = z.object({
+	telegramId: z.union([z.string(), z.number()]), // Принимает строку или число
+	amount: z.number().int()
 });
 
 app.post('/api/update-balance', async (req, res) => {
 	try {
 		// Валидация тела запроса
-		const { telegramId, amount } = updateBalanceSchema.parse(req.body);
+		const { telegramId, amount } = req.body;
 
 		// Проверяем, существует ли пользователь
 		const existingUser = await prisma.users.findUnique({
@@ -164,19 +164,11 @@ app.post('/api/update-balance', async (req, res) => {
 			return res.status(404).json({ message: 'User not found' });
 		}
 
-		const validatedData = z
-			.object({
-				telegramId: z.string(),
-				amount: z.number().int()
-			})
-			.parse({
-				telegramId: String(telegramId), // Приведение к строке
-				amount
-			});
+		const validatedData = schema.parse({ telegramId, amount });
 
 		// Обновляем баланс пользователя
 		const updatedUser = await prisma.users.update({
-			where: { telegramId: validatedData.telegramId },
+			where: { telegramId: String(validatedData.telegramId) }, // Приводим к строке
 			data: { balance: { increment: validatedData.amount } }
 		});
 
