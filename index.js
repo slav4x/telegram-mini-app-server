@@ -164,14 +164,20 @@ app.post('/api/update-balance', async (req, res) => {
 			return res.status(404).json({ message: 'User not found' });
 		}
 
+		const validatedData = z
+			.object({
+				telegramId: z.string(),
+				amount: z.number().int()
+			})
+			.parse({
+				telegramId: String(telegramId), // Приведение к строке
+				amount
+			});
+
 		// Обновляем баланс пользователя
 		const updatedUser = await prisma.users.update({
-			where: { telegramId },
-			data: {
-				balance: {
-					increment: amount // Увеличиваем баланс на переданное значение
-				}
-			}
+			where: { telegramId: validatedData.telegramId },
+			data: { balance: { increment: validatedData.amount } }
 		});
 
 		res.status(200).json({ message: 'Balance updated successfully', user: updatedUser });
