@@ -217,9 +217,9 @@ app.get('/api/get-leaderboard', async (req, res) => {
 	try {
 		const { telegramId } = req.query;
 
-		if (!telegramId) {
-			return res.status(400).json({ message: 'Telegram ID is required' });
-		}
+		// if (!telegramId) {
+		// 	return res.status(400).json({ message: 'Telegram ID is required' });
+		// }
 
 		// Получаем первых 100 пользователей с максимальным балансом
 		const leaderboardUsers = await prisma.users.findMany({
