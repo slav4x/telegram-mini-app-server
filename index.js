@@ -38,26 +38,27 @@ function verifyTelegramData(data) {
 		throw new Error('BOT_TOKEN is not defined in environment variables.');
 	}
 
-	// Генерация секретного ключа из BOT_TOKEN
-	const secretKey = crypto.createHmac('sha256', 'WebAppData').update(process.env.BOT_TOKEN).digest();
+	const botToken = process.env.BOT_TOKEN;
 
-	// Сортировка данных и исключение "hash" и "signature"
-	const sortedData = Object.keys(data)
-		.filter((key) => key !== 'hash' && key !== 'signature') // Исключаем "hash" и "signature"
-		.sort()
-		.map((key) => `${key}=${data[key]}`)
-		.join('\n');
+	// Генерация секретного ключа
+	const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
 
-	// Вычисление подписи
-	const hmac = crypto.createHmac('sha256', secretKey).update(sortedData).digest('hex');
+	// Формирование data-check-string
+	const dataCheckString = Object.keys(data)
+		.filter((key) => key !== 'hash') // Исключаем "hash"
+		.sort() // Сортируем поля
+		.map((key) => `${key}=${data[key]}`) // Формат key=value
+		.join('\n'); // Разделяем через \n
 
-	// Логирование отладочной информации
-	console.log('BOT TOKEN:', process.env.BOT_TOKEN);
-	console.log('Sorted data:', sortedData);
+	// Генерация HMAC для data-check-string
+	const hmac = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+	console.log('Data-check-string:', dataCheckString);
 	console.log('Calculated HMAC:', hmac);
 	console.log('Received hash:', data.hash);
 
-	return hmac === data.hash; // Сравнение рассчитанного HMAC с hash
+	// Сравнение рассчитанного HMAC с полученным hash
+	return hmac === data.hash;
 }
 
 // Роут для сохранения пользователя
