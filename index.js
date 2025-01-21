@@ -92,7 +92,7 @@ app.post('/api/save-user', async (req, res) => {
 
 		// Валидация данных пользователя
 		const validatedUser = userSchema.parse({
-			id: data.user ? JSON.parse(data.user).id : undefined,
+			id: String(user.id),
 			first_name: data.user ? JSON.parse(data.user).first_name : undefined,
 			last_name: data.user ? JSON.parse(data.user).last_name : undefined,
 			username: data.user ? JSON.parse(data.user).username : undefined,
