@@ -42,8 +42,18 @@ app.post('/api/save-user', async (req, res) => {
 	try {
 		const { initData } = req.body;
 
+		// Проверяем, передано ли initData
+		if (!initData) {
+			return res.status(400).json({ message: 'initData is missing' });
+		}
+
 		// Парсим данные Telegram
 		const data = Object.fromEntries(new URLSearchParams(initData));
+
+		// Проверяем, есть ли необходимые данные
+		if (!data.hash) {
+			return res.status(400).json({ message: 'Invalid initData: hash is missing' });
+		}
 
 		// Проверяем подпись
 		if (!verifyTelegramData(data)) {
@@ -61,23 +71,29 @@ app.post('/api/save-user', async (req, res) => {
 		});
 
 		// Проверяем, существует ли пользователь
-		const existingUser = await prisma.user.findUnique({
+		const existingUser = await prisma.users.findUnique({
 			where: { telegramId: validatedUser.id }
 		});
 
 		if (existingUser) {
+			await prisma.users.update({
+				where: { telegramId: validatedUser.id },
+				data: {} // Поле `updatedAt` обновится автоматически
+			});
+
 			return res.status(200).json({ message: 'User already exists', user: existingUser });
 		}
 
 		// Сохраняем нового пользователя
-		const newUser = await prisma.user.create({
+		const newUser = await prisma.users.create({
 			data: {
 				telegramId: validatedUser.id,
 				firstName: validatedUser.first_name,
 				lastName: validatedUser.last_name,
 				username: validatedUser.username,
 				languageCode: validatedUser.language_code,
-				isPremium: validatedUser.is_premium
+				isPremium: validatedUser.is_premium,
+				balance: 0
 			}
 		});
 
@@ -87,6 +103,49 @@ app.post('/api/save-user', async (req, res) => {
 		if (error instanceof z.ZodError) {
 			return res.status(400).json({ message: 'Validation error', errors: error.errors });
 		}
+		res.status(500).json({ message: 'Server error' });
+	}
+});
+
+// Валидация данных для обновления баланса через Zod
+const updateBalanceSchema = z.object({
+	telegramId: z.string(),
+	amount: z.number().int() // Указываем, что значение должно быть целым числом
+});
+
+app.post('/api/update-balance', async (req, res) => {
+	try {
+		// Валидация тела запроса
+		const { telegramId, amount } = updateBalanceSchema.parse(req.body);
+
+		// Проверяем, существует ли пользователь
+		const existingUser = await prisma.users.findUnique({
+			where: { telegramId }
+		});
+
+		if (!existingUser) {
+			return res.status(404).json({ message: 'User not found' });
+		}
+
+		// Обновляем баланс пользователя
+		const updatedUser = await prisma.users.update({
+			where: { telegramId },
+			data: {
+				balance: {
+					increment: amount // Увеличиваем баланс на переданное значение
+				}
+			}
+		});
+
+		res.status(200).json({ message: 'Balance updated successfully', user: updatedUser });
+	} catch (error) {
+		console.error(error);
+
+		// Если ошибка валидации Zod
+		if (error instanceof z.ZodError) {
+			return res.status(400).json({ message: 'Validation error', errors: error.errors });
+		}
+
 		res.status(500).json({ message: 'Server error' });
 	}
 });
