@@ -260,14 +260,17 @@ app.get('/api/get-leaderboard', async (req, res) => {
 			}
 		});
 
+		// Получаем общее количество пользователей
+		const totalUsers = await prisma.users.count();
+
 		// Формируем ответ
 		res.status(200).json({
-			message: 'Leaderboard fetched successfully',
 			leaderboard,
 			currentUserPosition: {
 				position,
 				balance: userPosition[0].balance
-			}
+			},
+			totalUsers
 		});
 	} catch (error) {
 		console.error('Error in get-leaderboard:', error);
