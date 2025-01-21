@@ -3,11 +3,21 @@ import bodyParser from 'body-parser';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import crypto from 'crypto';
+import cors from 'cors';
 
 const app = express();
 const prisma = new PrismaClient();
 
 const PORT = 3000;
+
+// Настрой CORS
+app.use(
+	cors({
+		origin: 'https://slav4x-telegram-mini-app-dbaa.twc1.net', // Домен твоего фронтенда
+		methods: ['GET', 'POST'], // Разрешённые методы
+		credentials: true // Если требуется передавать куки
+	})
+);
 
 // Middleware для обработки JSON
 app.use(bodyParser.json());
