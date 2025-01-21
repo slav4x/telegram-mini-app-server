@@ -242,12 +242,12 @@ app.get('/api/get-leaderboard', async (req, res) => {
 		}));
 
 		// Определяем позицию текущего пользователя
-		const userPosition = await prisma.users.findMany({
+		const userPosition = await prisma.users.findUnique({
 			where: { telegramId: String(telegramId) },
 			select: { balance: true }
 		});
 
-		if (userPosition.length === 0) {
+		if (!userPosition) {
 			return res.status(404).json({ message: 'User not found' });
 		}
 
