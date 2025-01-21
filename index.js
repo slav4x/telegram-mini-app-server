@@ -213,6 +213,39 @@ app.get('/api/get-user', async (req, res) => {
 	}
 });
 
+app.get('/api/get-leaderboard', async (req, res) => {
+	try {
+		// Получаем первых 100 пользователей с максимальным балансом
+		const users = await prisma.users.findMany({
+			orderBy: {
+				balance: 'desc'
+			},
+			take: 100,
+			select: {
+				firstName: true,
+				lastName: true,
+				balance: true
+			}
+		});
+
+		// Формируем результат с нумерацией
+		const leaderboard = users.map((user, index) => ({
+			id: String(index + 1).padStart(3, '0'), // Форматируем ID в виде 001, 002, ...
+			name: `${user.firstName} ${user.lastName || ''}`.trim(), // Полное имя
+			balance: user.balance
+		}));
+
+		// Возвращаем результат
+		res.status(200).json({
+			message: 'Leaderboard fetched successfully',
+			leaderboard
+		});
+	} catch (error) {
+		console.error('Error in get-leaderboard:', error);
+		res.status(500).json({ message: 'Server error' });
+	}
+});
+
 // Запуск сервера
 app.listen(PORT, () => {
 	console.log(`Server is running on http://localhost:${PORT}`);
