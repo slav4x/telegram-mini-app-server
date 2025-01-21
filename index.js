@@ -270,7 +270,7 @@ app.get('/api/get-leaderboard', async (req, res) => {
 			leaderboard,
 			currentUserPosition: {
 				position,
-				balance: userPosition[0].balance
+				balance: userPosition.balance
 			},
 			totalUsers
 		});
