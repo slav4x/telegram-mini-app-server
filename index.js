@@ -153,28 +153,33 @@ const schema = z.object({
 app.post('/api/update-balance', async (req, res) => {
 	try {
 		// Валидация тела запроса
-		const { telegramId, amount } = req.body;
+		const { telegramId, amount } = schema.parse(req.body);
 
-		// Проверяем, существует ли пользователь
-		const existingUser = await prisma.users.findUnique({
-			where: { telegramId }
+		// Используем транзакцию для атомарного обновления
+		const updatedUser = await prisma.$transaction(async (transaction) => {
+			// Найти пользователя
+			const user = await transaction.users.findUnique({
+				where: { telegramId: String(telegramId) }
+			});
+
+			if (!user) {
+				throw new Error('User not found');
+			}
+
+			// Обновить баланс
+			return await transaction.users.update({
+				where: { telegramId: String(telegramId) },
+				data: { balance: { increment: amount } }
+			});
 		});
 
-		if (!existingUser) {
-			return res.status(404).json({ message: 'User not found' });
-		}
-
-		const validatedData = schema.parse({ telegramId, amount });
-
-		// Обновляем баланс пользователя
-		const updatedUser = await prisma.users.update({
-			where: { telegramId: String(validatedData.telegramId) }, // Приводим к строке
-			data: { balance: { increment: validatedData.amount } }
+		// Успешный ответ
+		res.status(200).json({
+			message: 'Balance updated successfully',
+			user: updatedUser
 		});
-
-		res.status(200).json({ message: 'Balance updated successfully', user: updatedUser });
 	} catch (error) {
-		console.error(error);
+		console.error('Error in update-balance:', error);
 
 		// Если ошибка валидации Zod
 		if (error instanceof z.ZodError) {
