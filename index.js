@@ -39,7 +39,7 @@ function verifyTelegramData(data) {
 	}
 
 	// Генерация секретного ключа из BOT_TOKEN
-	const secretKey = crypto.createHash('sha256').update(process.env.BOT_TOKEN).digest();
+	const secretKey = crypto.createHash('sha256', 'WebAppData').update(process.env.BOT_TOKEN).digest();
 
 	// Сортировка данных и исключение "hash" и "signature"
 	const sortedData = Object.keys(data)
@@ -52,6 +52,7 @@ function verifyTelegramData(data) {
 	const hmac = crypto.createHmac('sha256', secretKey).update(sortedData).digest('hex');
 
 	// Логирование отладочной информации
+	console.log('BOT TOKEN:', process.env.BOT_TOKEN);
 	console.log('Sorted data:', sortedData);
 	console.log('Calculated HMAC:', hmac);
 	console.log('Received hash:', data.hash);
