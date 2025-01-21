@@ -108,6 +108,12 @@ app.post('/api/save-user', async (req, res) => {
 
 		if (existingUser) {
 			console.log('User already exists:', existingUser);
+
+			await prisma.users.update({
+				where: { telegramId: validatedUser.id },
+				data: {}
+			});
+
 			return res.status(200).json({ message: 'User already exists', user: existingUser });
 		}
 
