@@ -1,0 +1,21 @@
+{
+	"name": "telegram-mini-app-server",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"@prisma/client": "^6.2.1",
+		"@types/body-parser": "^1.19.5",
+		"@types/express": "^5.0.0",
+		"body-parser": "^1.20.3",
+		"express": "^4.21.2",
+		"prisma": "^6.2.1",
+		"zod": "^3.24.1"
+	}
+}
