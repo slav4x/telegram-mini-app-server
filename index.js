@@ -217,6 +217,8 @@ app.get('/api/get-leaderboard', async (req, res) => {
 	try {
 		const { telegramId } = req.query;
 
+		console.log('Received telegramId:', telegramId);
+
 		if (!telegramId) {
 			return res.status(400).json({ message: 'Telegram ID is required' });
 		}
@@ -251,11 +253,11 @@ app.get('/api/get-leaderboard', async (req, res) => {
 			return res.status(404).json({ message: 'User not found' });
 		}
 
-		// Узнаем позицию пользователя среди всех игроков
+		// Теперь можно безопасно обратиться к userPosition.balance
 		const position = await prisma.users.count({
 			where: {
 				balance: {
-					gte: userPosition[0].balance // Количество игроков с балансом больше или равным текущему
+					gte: userPosition.balance // Количество игроков с балансом больше или равным текущему
 				}
 			}
 		});
