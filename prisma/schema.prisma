@@ -23,6 +23,7 @@ model Users {
   languageCode String?
   isPremium    Boolean  @default(false)
   balance      Int      @default(0)
+  taps         Int      @default(0)
   updatedAt    DateTime @updatedAt
   createdAt    DateTime @default(now())
 }

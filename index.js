@@ -169,7 +169,7 @@ app.post('/api/update-balance', async (req, res) => {
 			// Обновить баланс
 			return await transaction.users.update({
 				where: { telegramId: String(telegramId) },
-				data: { balance: { increment: amount } }
+				data: { balance: { increment: amount }, taps: { increment: 1 } }
 			});
 		});
 
@@ -276,6 +276,47 @@ app.get('/api/get-leaderboard', async (req, res) => {
 		});
 	} catch (error) {
 		console.error('Error in get-leaderboard:', error);
+		res.status(500).json({ message: 'Server error' });
+	}
+});
+
+app.get('/api/get-profile', async (req, res) => {
+	try {
+		const { telegramId } = req.query;
+
+		if (!telegramId) {
+			return res.status(400).json({ message: 'Telegram ID is required' });
+		}
+
+		// Получаем данные пользователя
+		const user = await prisma.users.findUnique({
+			where: { telegramId: String(telegramId) },
+			select: {
+				createdAt: true,
+				balance: true,
+				taps: true
+			}
+		});
+
+		if (!user) {
+			return res.status(404).json({ message: 'User not found' });
+		}
+
+		// Форматируем дату регистрации
+		const formattedDate = new Date(user.createdAt).toLocaleDateString('ru-RU', {
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric'
+		});
+
+		// Формируем ответ
+		res.status(200).json({
+			registrationDate: formattedDate,
+			balance: user.balance,
+			taps: user.taps
+		});
+	} catch (error) {
+		console.error('Error in get-profile:', error);
 		res.status(500).json({ message: 'Server error' });
 	}
 });
