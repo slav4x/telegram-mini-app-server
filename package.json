@@ -5,8 +5,8 @@
 	"main": "index.js",
 	"type": "module",
 	"scripts": {
-		"start": "node server.js",
-		"build": "prisma generate"
+		"build": "prisma generate",
+		"start": "node index.js"
 	},
 	"author": "",
 	"license": "ISC",
