@@ -38,24 +38,25 @@ function verifyTelegramData(data) {
 		throw new Error('BOT_TOKEN is not defined in environment variables.');
 	}
 
-	// Генерация ключа из BOT_TOKEN
+	// Генерация секретного ключа из BOT_TOKEN
 	const secretKey = crypto.createHash('sha256').update(process.env.BOT_TOKEN).digest();
 
-	// Сортируем и форматируем данные для HMAC
+	// Сортировка данных и исключение "hash" и "signature"
 	const sortedData = Object.keys(data)
-		.filter((key) => key !== 'hash') // Исключаем hash из проверки
+		.filter((key) => key !== 'hash' && key !== 'signature') // Исключаем "hash" и "signature"
 		.sort()
 		.map((key) => `${key}=${data[key]}`)
 		.join('\n');
 
-	// Вычисляем подпись
+	// Вычисление подписи
 	const hmac = crypto.createHmac('sha256', secretKey).update(sortedData).digest('hex');
 
+	// Логирование отладочной информации
 	console.log('Sorted data:', sortedData);
 	console.log('Calculated HMAC:', hmac);
 	console.log('Received hash:', data.hash);
 
-	return hmac === data.hash; // Сравниваем рассчитанный HMAC с hash
+	return hmac === data.hash; // Сравнение рассчитанного HMAC с hash
 }
 
 // Роут для сохранения пользователя
