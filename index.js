@@ -215,8 +215,14 @@ app.get('/api/get-user', async (req, res) => {
 
 app.get('/api/get-leaderboard', async (req, res) => {
 	try {
+		const { telegramId } = req.query;
+
+		if (!telegramId) {
+			return res.status(400).json({ message: 'Telegram ID is required' });
+		}
+
 		// Получаем первых 100 пользователей с максимальным балансом
-		const users = await prisma.users.findMany({
+		const leaderboardUsers = await prisma.users.findMany({
 			orderBy: {
 				balance: 'desc'
 			},
@@ -229,16 +235,39 @@ app.get('/api/get-leaderboard', async (req, res) => {
 		});
 
 		// Формируем результат с нумерацией
-		const leaderboard = users.map((user, index) => ({
+		const leaderboard = leaderboardUsers.map((user, index) => ({
 			id: String(index + 1).padStart(3, '0'), // Форматируем ID в виде 001, 002, ...
 			name: `${user.firstName} ${user.lastName || ''}`.trim(), // Полное имя
 			balance: user.balance
 		}));
 
-		// Возвращаем результат
+		// Определяем позицию текущего пользователя
+		const userPosition = await prisma.users.findMany({
+			where: { telegramId: String(telegramId) },
+			select: { balance: true }
+		});
+
+		if (userPosition.length === 0) {
+			return res.status(404).json({ message: 'User not found' });
+		}
+
+		// Узнаем позицию пользователя среди всех игроков
+		const position = await prisma.users.count({
+			where: {
+				balance: {
+					gte: userPosition[0].balance // Количество игроков с балансом больше или равным текущему
+				}
+			}
+		});
+
+		// Формируем ответ
 		res.status(200).json({
 			message: 'Leaderboard fetched successfully',
-			leaderboard
+			leaderboard,
+			currentUserPosition: {
+				position,
+				balance: userPosition[0].balance
+			}
 		});
 	} catch (error) {
 		console.error('Error in get-leaderboard:', error);
