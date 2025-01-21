@@ -24,8 +24,11 @@ const userSchema = z.object({
 
 // Проверка подписи Telegram
 function verifyTelegramData(data) {
-	const secretKey = crypto.createHash('sha256').update(process.env.BOT_TOKEN).digest();
+	if (!process.env.BOT_TOKEN) {
+		throw new Error('BOT_TOKEN is not defined in environment variables.');
+	}
 
+	const secretKey = crypto.createHash('sha256').update(process.env.BOT_TOKEN).digest();
 	const sortedData = Object.keys(data)
 		.filter((key) => key !== 'hash')
 		.sort()
@@ -42,32 +45,35 @@ app.post('/api/save-user', async (req, res) => {
 	try {
 		const { initData } = req.body;
 
-		// Проверяем, передано ли initData
 		if (!initData) {
+			console.error('No initData provided in the request.');
 			return res.status(400).json({ message: 'initData is missing' });
 		}
 
-		// Парсим данные Telegram
+		// Парсим initData
 		const data = Object.fromEntries(new URLSearchParams(initData));
 
-		// Проверяем, есть ли необходимые данные
 		if (!data.hash) {
+			console.error('No hash provided in initData.');
 			return res.status(400).json({ message: 'Invalid initData: hash is missing' });
 		}
 
-		// Проверяем подпись
+		// Проверяем подпись (verifyTelegramData)
 		if (!verifyTelegramData(data)) {
+			console.error('Invalid Telegram signature.');
 			return res.status(403).json({ message: 'Invalid Telegram signature' });
 		}
 
-		// Валидация данных через Zod
+		console.log('Parsed data:', data);
+
+		// Валидация данных пользователя
 		const validatedUser = userSchema.parse({
-			id: data.id,
-			first_name: data.first_name,
-			last_name: data.last_name,
-			username: data.username,
-			language_code: data.language_code,
-			is_premium: data.is_premium === 'true'
+			id: data.user ? JSON.parse(data.user).id : undefined,
+			first_name: data.user ? JSON.parse(data.user).first_name : undefined,
+			last_name: data.user ? JSON.parse(data.user).last_name : undefined,
+			username: data.user ? JSON.parse(data.user).username : undefined,
+			language_code: data.user ? JSON.parse(data.user).language_code : undefined,
+			is_premium: data.user ? JSON.parse(data.user).is_premium : false
 		});
 
 		// Проверяем, существует ли пользователь
@@ -76,15 +82,11 @@ app.post('/api/save-user', async (req, res) => {
 		});
 
 		if (existingUser) {
-			await prisma.users.update({
-				where: { telegramId: validatedUser.id },
-				data: {} // Поле `updatedAt` обновится автоматически
-			});
-
+			console.log('User already exists:', existingUser);
 			return res.status(200).json({ message: 'User already exists', user: existingUser });
 		}
 
-		// Сохраняем нового пользователя
+		// Создаём нового пользователя
 		const newUser = await prisma.users.create({
 			data: {
 				telegramId: validatedUser.id,
@@ -97,12 +99,16 @@ app.post('/api/save-user', async (req, res) => {
 			}
 		});
 
+		console.log('User created:', newUser);
+
 		res.status(201).json({ message: 'User saved successfully', user: newUser });
 	} catch (error) {
-		console.error(error);
+		console.error('Error processing request:', error);
+
 		if (error instanceof z.ZodError) {
 			return res.status(400).json({ message: 'Validation error', errors: error.errors });
 		}
+
 		res.status(500).json({ message: 'Server error' });
 	}
 });
