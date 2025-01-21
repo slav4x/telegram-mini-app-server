@@ -238,7 +238,7 @@ app.get('/api/get-leaderboard', async (req, res) => {
 		// Формируем результат с нумерацией
 		const leaderboard = leaderboardUsers.map((user, index) => ({
 			id: String(index + 1).padStart(3, '0'), // Форматируем ID в виде 001, 002, ...
-			name: username, // Полное имя
+			name: user.username, // Полное имя
 			balance: user.balance
 		}));
 
