@@ -19,6 +19,17 @@ app.use(
 	})
 );
 
+// Проверка соединения с базой данных
+(async () => {
+	try {
+		await prisma.$connect();
+		console.log('Database connected successfully');
+	} catch (error) {
+		console.error('Database connection error:', error);
+		process.exit(1); // Завершаем процесс, если подключение не удалось
+	}
+})();
+
 // Middleware для обработки JSON
 app.use(bodyParser.json());
 
@@ -67,28 +78,14 @@ app.post('/api/save-user', async (req, res) => {
 		const { initData } = req.body;
 
 		if (!initData) {
-			console.error('No initData provided in the request.');
 			return res.status(400).json({ message: 'initData is missing' });
 		}
 
-		// Парсим initData
 		const data = Object.fromEntries(new URLSearchParams(initData));
 
-		console.log('Raw initData:', initData);
-		console.log('Parsed initData:', data);
-
-		if (!data.hash) {
-			console.error('No hash provided in initData.');
-			return res.status(400).json({ message: 'Invalid initData: hash is missing' });
-		}
-
-		// Проверяем подпись (verifyTelegramData)
 		if (!verifyTelegramData(data)) {
-			console.error('Invalid Telegram signature.');
 			return res.status(403).json({ message: 'Invalid Telegram signature' });
 		}
-
-		console.log('Parsed data:', data);
 
 		const user = JSON.parse(data.user);
 
